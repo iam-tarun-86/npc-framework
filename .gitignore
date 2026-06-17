@@ -1,0 +1,25 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# ChromaDB
+backend/memory/chroma_store/
+
+# SQLite
+*.sqlite
+*.sqlite3
+
+# Models
+*.gguf
+*.h5
+
+# Node
+node_modules/
+dist/
+
+# OS
+.DS_Store
+Thumbs.db
