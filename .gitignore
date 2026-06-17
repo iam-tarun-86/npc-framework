@@ -1,25 +1,74 @@
-# Python
+# Python virtual environments & packages
 venv/
+.venv/
+env/
+.env/
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
 *.egg-info/
+.pytest_cache/
+.mypy_cache/
 
-# ChromaDB
-backend/memory/chroma_store/
-
-# SQLite
+# SQLite Databases & Journal Files
 *.sqlite
 *.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
 
-# Models
+# ChromaDB & Vector Store
+**/chroma_store/
+backend/memory/chroma_store/
+
+# ML/DL Models & Large Weights
 *.gguf
 *.h5
+*.bin
+*.pt
+*.safetensors
 
-# Node
+# Fine-tuning Output Directories
+**/distilbert_intent/
+**/distilbert_results/
+**/distilbert_logs/
+
+# Node modules & build outputs
 node_modules/
 dist/
 
-# OS
+# IDE & Editor Settings
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# OS-specific files
 .DS_Store
+.DS_Store?
 Thumbs.db
+ehthumbs.db
+
+# Jupyter / IPython
+.ipynb_checkpoints/
+*.ipynb
+
+# Coverage reports
+htmlcov/
+.coverage
+
+# Local environment files
+.env.local
+.env.development
+.env.production
+
+# Flask
+instance/
+*.log
+
+# React build
+build/

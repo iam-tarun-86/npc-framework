@@ -1,0 +1,203 @@
+text,label
+"Hey there friend how are you",friendly
+"Good to see you again",friendly
+"You seem like a nice person",friendly
+"I trust you with this",friendly
+"Thanks for your help",friendly
+"Have a great day",friendly
+"You are wonderful",friendly
+"I appreciate your kindness",friendly
+"Let's be allies",friendly
+"You're a good merchant",friendly
+"Hello there kind sir",friendly
+"Nice to meet you",friendly
+"You look honest",friendly
+"I come as a friend",friendly
+"Peace be with you",friendly
+"You're a blessing",friendly
+"I admire your work",friendly
+"Let's help each other",friendly
+"You've earned my respect",friendly
+"I speak with goodwill",friendly
+"Hello merchant",friendly
+"Nice weather today",friendly
+"You look trustworthy",friendly
+"I come in peace",friendly
+"Greetings traveler",friendly
+"Well met",friendly
+"Pleasure doing business",friendly
+"You're a lifesaver",friendly
+"I owe you one",friendly
+"Good morning friend",friendly
+"How have you been",friendly
+"It's wonderful to see you",friendly
+"You always help everyone",friendly
+"You're so generous",friendly
+"I heard great things about you",friendly
+"You're a true professional",friendly
+"I feel safe with you",friendly
+"You're one of the good ones",friendly
+"Thanks for being you",friendly
+"You're a gem",friendly
+"I cherish our friendship",friendly
+"You're irreplaceable",friendly
+"You make this place better",friendly
+"You're a role model",friendly
+"I aspire to be like you",friendly
+"You're incredibly talented",friendly
+"Your wisdom is unmatched",friendly
+"You're a beacon of hope",friendly
+"I'm honored to know you",friendly
+"You bring joy to everyone",friendly
+"Your kindness knows no bounds",friendly
+"I will kill you",hostile
+"You worthless scum",hostile
+"Die in a fire",hostile
+"I hate your guts",hostile
+"You're dead meat",hostile
+"Get out of my sight",hostile
+"You pathetic fool",hostile
+"I'll destroy you",hostile
+"You're nothing to me",hostile
+"Prepare to suffer",hostile
+"Shut your mouth",hostile
+"You make me sick",hostile
+"I'll make you pay",hostile
+"Don't test my patience",hostile
+"You're a disgrace",hostile
+"I'll end you",hostile
+"Leave before I hurt you",hostile
+"You disgust me",hostile
+"Watch your back",hostile
+"Stupid idiot",hostile
+"Filthy liar",hostile
+"Rot in hell",hostile
+"Scumbag thief",hostile
+"Disgusting worm",hostile
+"Mind your own business",hostile
+"Don't talk to me",hostile
+"You're a waste of space",hostile
+"I despise you",hostile
+"You're the worst person alive",hostile
+"I'll burn your shop down",hostile
+"Nobody likes you",hostile
+"You're a fraud",hostile
+"Get lost loser",hostile
+"I hope you fail",hostile
+"You're a joke",hostile
+"Don't look at me",hostile
+"I'll report you",hostile
+"You're finished",hostile
+"You betrayed me",hostile
+"I'll take revenge",hostile
+"You're a coward",hostile
+"Face me like a man",hostile
+"You're going down",hostile
+"You're powerless",hostile
+"I'll expose your lies",hostile
+"You're finished here",hostile
+"You're a disgrace to this town",hostile
+"You're the problem",hostile
+"You make me want to vomit",hostile
+"I wish you never existed",hostile
+"What do you have for sale",trade
+"How much for this sword",trade
+"I want to buy something",trade
+"What's your price",trade
+"Can I trade with you",trade
+"Show me your wares",trade
+"I have coin to spend",trade
+"Let's make a deal",trade
+"I'll take ten of those",trade
+"How much gold for the shield",trade
+"I'll pay double",trade
+"Is this item discounted",trade
+"Do you accept barter",trade
+"What's the cheapest you have",trade
+"I need potions",trade
+"Sell me your best gear",trade
+"Can you hold this for me",trade
+"Put it on my tab",trade
+"Can I see your inventory",trade
+"I want to purchase armor",trade
+"What deals do you have",trade
+"Do you sell weapons",trade
+"I'll buy everything",trade
+"Name your price",trade
+"I have silver to spend",trade
+"Let's negotiate",trade
+"Wrap it up I'll take it",trade
+"Any new stock today",trade
+"I'm looking for rare items",trade
+"Do you have magical goods",trade
+"What's your finest merchandise",trade
+"I need supplies for a journey",trade
+"Can you recommend something",trade
+"I want the best you have",trade
+"Do you take gold coins",trade
+"Show me something expensive",trade
+"I need healing items",trade
+"Looking for something special today",trade
+"Do you have any discounts for regulars",trade
+"I want to sell my old armor",trade
+"What's the exchange rate for gems",trade
+"Can you repair this broken sword",trade
+"I need a bulk order of arrows",trade
+"Do you deliver to other towns",trade
+"What's your return policy",trade
+"I want to commission a custom weapon",trade
+"Do you have any legendary items",trade
+"Can I put this on layaway",trade
+"What's the going rate for dragon scales",trade
+"I want to trade my horse for supplies",trade
+"Do you have any quests for me",quest
+"I need a mission",quest
+"Any tasks available",quest
+"Tell me about the dragon problem",quest
+"Who needs help around here",quest
+"I want to join your cause",quest
+"What's the bounty on that bandit",quest
+"Point me to adventure",quest
+"Is there work to be done",quest
+"Where is the hidden treasure",quest
+"Who is the evil king",quest
+"Tell me the rumors",quest
+"I seek the ancient artifact",quest
+"Guide me to the dungeon",quest
+"What threatens this village",quest
+"I want to slay the beast",quest
+"Recruit me for your guild",quest
+"Any secrets you know",quest
+"Where can I find the lost amulet",quest
+"Tell me about the goblin raid",quest
+"Who is the mysterious stranger",quest
+"I want to uncover the conspiracy",quest
+"Help me save the princess",quest
+"There's a monster in the forest",quest
+"I need to deliver this message",quest
+"What's the reward for capture",quest
+"Point me to the nearest dungeon",quest
+"I want to become a hero",quest
+"Who do I talk to about work",quest
+"Is there a bounty board",quest
+"I seek ancient knowledge",quest
+"Tell me the legend of the sword",quest
+"I want to protect this town",quest
+"Who is the dark lord",quest
+"I need to find the hidden key",quest
+"Any rumors about treasure",quest
+"Where can I find the ancient ruins",quest
+"Tell me about the haunted castle",quest
+"Who stole the royal jewels",quest
+"I want to solve the village mystery",quest
+"Help me find my lost brother",quest
+"There's a curse on this land",quest
+"I need to escort the merchant caravan",quest
+"What's the challenge in the arena",quest
+"Point me to the dragon's lair",quest
+"I want to retrieve the stolen artifact",quest
+"Who do I see about the werewolf problem",quest
+"Is there a spy in the castle",quest
+"I seek the fountain of youth",quest
+"Tell me about the phantom ship",quest
+"I want to rescue the kidnapped prince",quest

@@ -6,6 +6,7 @@ from flask_cors import CORS
 
 from memory.memory import add_memory, get_relevant_memories
 from relationship import get_mood, update_mood
+from intent_classifier import classify_intent  # NEW
 
 app = Flask(__name__)
 CORS(app)
@@ -22,6 +23,10 @@ def chat():
     with open(f"npcs/merchant.json", "r") as f:
         npc = json.load(f)
     
+    # REAL INTENT CLASSIFICATION (DistilBERT)
+    intent_result = classify_intent(player_text)
+    intent = intent_result['intent']
+    
     # Retrieve relevant memories (ATTENTION MECHANISM)
     memories = get_relevant_memories(npc_id, player_text, n_results=3)
     memory_block = "\n".join([f"- {m}" for m in memories]) if memories else "No prior memories."
@@ -34,9 +39,10 @@ def chat():
     system_prompt = f"""You are {npc['name']}, a {npc['role']}. 
 Personality: {npc['personality']}.
 Current mood toward player: {mood_desc} (score: {mood:.2f}).
+Player intent detected: {intent}.
 Relevant past interactions:
 {memory_block}
-Stay in character. Reference memories naturally if relevant."""
+Stay in character. Reference memories naturally if relevant. React to the player's intent."""
     
     payload = {
         "model": "qwen",
@@ -56,14 +62,14 @@ Stay in character. Reference memories naturally if relevant."""
         add_memory(npc_id, f"Player: {player_text}")
         add_memory(npc_id, f"{npc['name']}: {npc_reply}")
         
-        # Update mood (placeholder intent until Week 3 LSTM)
-        new_mood = update_mood(npc_id, "neutral")
+        # Update mood based on REAL intent
+        new_mood = update_mood(npc_id, intent)
         
         return jsonify({
             "reply": npc_reply,
             "debug": {
                 "raw_prompt_sent": system_prompt,
-                "intent_detected": "neutral (Week 2 placeholder)",
+                "intent_detected": f"{intent} (confidence: {intent_result['confidence']})",
                 "mood_score": round(new_mood, 2),
                 "memories_used": memories
             }
