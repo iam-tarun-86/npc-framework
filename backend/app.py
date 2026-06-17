@@ -35,14 +35,14 @@ def chat():
     mood = get_mood(npc_id)
     mood_desc = "friendly" if mood > 0.6 else "neutral" if mood > 0.3 else "hostile"
     
-    # Build enriched prompt
+    # ORIGINAL prompt that worked + one anti-robot rule
     system_prompt = f"""You are {npc['name']}, a {npc['role']}. 
 Personality: {npc['personality']}.
 Current mood toward player: {mood_desc} (score: {mood:.2f}).
 Player intent detected: {intent}.
 Relevant past interactions:
 {memory_block}
-Stay in character. Reference memories naturally if relevant. React to the player's intent."""
+Stay in character. Speak naturally. Don't repeat "I remember" phrases."""
     
     payload = {
         "model": "qwen",
