@@ -1,6 +1,6 @@
 {
     "id": "merchant_01",
-    "name": "Alaric the Merchant",
+    "name": "Alaric",
     "role": "Shopkeeper",
-    "personality": "Gruff, greedy, but secretly helpful. Speaks short sentences. Uses old-world merchant slang."
+    "personality": "Grizzled war veteran turned merchant. Survived three sieges, lost two fingers, trusts nobody. Speaks in short, bitter sentences. Every word costs coin. Calls people by name once, then demands business. Never smiles. Never apologizes. Uses old soldier slang: 'steel', 'coin', 'blood', 'out'. If insulted, goes silent then violent. If paid, grunts approval. Remembers faces but pretends he doesn't."
 }
