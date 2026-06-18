@@ -18,18 +18,21 @@ def init_db():
         )
     ''')
     
-    # NEW: Semantic facts table
+    # Drop old facts table if exists (to fix schema)
+    c.execute('DROP TABLE IF EXISTS facts')
+    
+    # NEW: Semantic facts table with correct primary key
     c.execute('''
         CREATE TABLE IF NOT EXISTS facts (
             npc_id TEXT,
             fact_type TEXT,
             fact_value TEXT,
             timestamp TEXT,
-            PRIMARY KEY (npc_id, fact_type)
+            PRIMARY KEY (npc_id, fact_type, fact_value)
         )
     ''')
     
-    # NEW: Procedural memory - how NPC should behave
+    # NEW: Procedural memory
     c.execute('''
         CREATE TABLE IF NOT EXISTS behavior_rules (
             npc_id TEXT,
@@ -82,6 +85,11 @@ def update_mood(npc_id, intent_label):
 def extract_facts(npc_id, player_text, npc_reply):
     """Pull out important facts from conversation."""
     facts = []
+    # DEBUG: See what Alaric actually says
+    print(f"DEBUG NPC_REPLY: '{npc_reply}'")
+    print(f"DEBUG PLAYER_TEXT: '{player_text}'")
+
+    print(f"EXTRACT_FACTS CALLED: npc_id={npc_id}, player_text='{player_text}', npc_reply='{npc_reply}'")
     
     # Find name
     name_match = re.search(r"my name is (\w+)", player_text, re.IGNORECASE)
@@ -104,16 +112,41 @@ def extract_facts(npc_id, player_text, npc_reply):
     if any(word in player_text.lower() for word in ["buy", "purchase", "coin", "gold", "pay", "money"]):
         facts.append(("trust", "paid_money"))
     
+    #NEW: Track deals and prices
+    # Detect price mentions in NPC reply (digits OR number words)
+    price_patterns = [
+        r"(\d+)\s*(silver|gold|copper)",  # "4 silver", "10 gold"
+        r"(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty[- ]?\w*)\s*(silver|gold|copper|coin)",  # "six silver", "twenty-five coin"
+    ]
+    
+    price_match = None
+    for pattern in price_patterns:
+        match = re.search(pattern, npc_reply, re.IGNORECASE)
+        if match:
+            price_match = match
+            break
+    
+    if price_match:
+        price = price_match.group(0)
+        item = "unknown"
+        if any(word in player_text.lower() for word in ["sword", "blade", "steel"]):
+            item = "sword"
+        elif any(word in player_text.lower() for word in ["dagger", "knife"]):
+            item = "dagger"
+        elif any(word in player_text.lower() for word in ["armor", "shield"]):
+            item = "armor"
+        elif any(word in player_text.lower() for word in ["potion", "heal"]):
+            item = "potion"
+        
+        facts.append(("deal", f"{item}:{price}"))
+    
     # Store in database
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     for fact_type, fact_value in facts:
         c.execute('''
-            INSERT INTO facts (npc_id, fact_type, fact_value, timestamp)
+            INSERT OR IGNORE INTO facts (npc_id, fact_type, fact_value, timestamp)
             VALUES (?, ?, ?, ?)
-            ON CONFLICT(npc_id, fact_type) DO UPDATE SET
-                fact_value = excluded.fact_value,
-                timestamp = excluded.timestamp
         ''', (npc_id, fact_type, fact_value, datetime.now().isoformat()))
     conn.commit()
     conn.close()
@@ -134,6 +167,40 @@ def get_facts(npc_id):
             facts[fact_type] = []
         facts[fact_type].append(fact_value)
     return facts
+
+def get_situation_facts(npc_id, mood):
+    """Build contextual facts based on mood (forgiveness logic)."""
+    facts = get_facts(npc_id)
+    trust = facts.get("trust", [])
+    deals = facts.get("deal", [])
+    
+    situation = []
+    
+    # Name
+    name = facts.get("player_name", [None])[0]
+    if name:
+        situation.append(f"Customer: {name}")
+    
+    # Past deals
+    if deals:
+        situation.append(f"Past deals: {', '.join(deals)}")
+    
+    # Trust with forgiveness context
+    if "was_rude" in trust:
+        if mood > 0.8:
+            situation.append("They were rude once, but you almost trust them now")
+        elif mood > 0.6:
+            situation.append("They were rude, but they apologized. Watching.")
+        elif mood > 0.4:
+            situation.append("They insulted you. Still angry.")
+        else:
+            situation.append("They insulted you. Want them gone.")
+    
+    # Paid before?
+    if "paid_money" in trust:
+        situation.append("They paid before")
+    
+    return situation
 
 # ==================== PROCEDURAL MEMORY ====================
 

@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 from memory.memory import add_memory, get_relevant_memories
-from relationship import get_mood, update_mood, get_facts, get_behavior_rules, extract_facts, update_behavior
+from relationship import get_mood, update_mood, get_facts, get_behavior_rules, extract_facts, update_behavior, get_situation_facts
 from intent_classifier import classify_intent
 
 app = Flask(__name__)
@@ -43,20 +43,13 @@ def chat():
     # Get procedural behavior
     behavior_rules = get_behavior_rules(npc_id)
     
-    # Build character sheet (persistent facts)
-       # Build character sheet
-    name = facts.get("player_name", [None])[0]
-    trust_events = facts.get("trust", [])
+    # Build character sheet with forgiveness logic
+    situation = get_situation_facts(npc_id, mood)
     
-    situation = []
-    if name:
-        situation.append(f"Customer: {name}")
-    if "was_rude" in trust_events:
-        situation.append("They insulted you")
-    if "paid_money" in trust_events:
-        situation.append("They paid before")
-    
-    if mood > 0.7:
+    # Mood-based attitude
+    if mood > 0.8:
+        situation.append("You almost like them")
+    elif mood > 0.6:
         situation.append("You tolerate them")
     elif mood > 0.4:
         situation.append("You watch them")
@@ -67,19 +60,21 @@ def chat():
     
     situation_block = "\n".join([f"- {s}" for s in situation])
     
-    # FEW-SHOT SYSTEM PROMPT for Gemma 8B
-    system_prompt = f"""You are Alaric, a grizzled merchant. You survived three wars. You trust no one.
+    # System prompt for Gemma 8B
+    system_prompt = f"""You are {npc['name']}, a {npc['role']}. {npc['personality']}
 
 Current situation:
 {situation_block}
+
+You sell: swords, daggers, armor, potions, shields. Prices vary by quality and your mood.
 
 How you talk:
 - Q: Who are you? A: Alaric. Sell steel. Coin or out.
 - Q: My name is Sarah A: Sarah. Don't care. Buy or leave.
 - Q: I want a sword A: Steel. Good price. Coin first.
-- Q: You're ugly A: ...Get out.
+- Q: How much? A: [quote a price based on your mood]
 
-Now respond to the player. Short. Bitter. One or two sentences."""
+Now respond to the player. Short. Bitter. One or two sentences. If they ask prices, make up fair prices."""
 
     messages = [
         {"role": "system", "content": system_prompt},
@@ -89,7 +84,7 @@ Now respond to the player. Short. Bitter. One or two sentences."""
     payload = {
         "model": "gemma",
         "messages": messages,
-        "temperature": 0.8,
+        "temperature": 0.7
     }
     
     try:
