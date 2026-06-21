@@ -60,35 +60,65 @@ export default class VillageScene extends Phaser.Scene {
   createMap() {
     const graphics = this.add.graphics();
 
+    // Seeded random for consistent grass variation
+    let seed = 12345;
+    const random = () => {
+      seed = (seed * 16807 + 0) % 2147483647;
+      return (seed - 1) / 2147483646;
+    };
+
     for (let y = 0; y < MAP_HEIGHT; y++) {
       for (let x = 0; x < MAP_WIDTH; x++) {
         const tileType = TILE_MAP[y][x];
         const px = x * TILE_SIZE;
         const py = y * TILE_SIZE;
 
-        const colors = {
-          0: 0x4a7c4e,
-          1: 0x2d5a27,
-          2: 0x8B4513,
-          3: 0xC4A484,
-        };
+        // Grass with 3 color variations
+        const grassColors = [0x4a7c4e, 0x4e8052, 0x467a4a, 0x528256];
+        const pathColors = [0xC4A484, 0xba9a7a, 0xd4b494];
 
-        graphics.fillStyle(colors[tileType] || 0x4a7c4e, 1);
+        let color;
+        if (tileType === 0) {
+          color = grassColors[Math.floor(random() * grassColors.length)];
+        } else if (tileType === 3) {
+          color = pathColors[Math.floor(random() * pathColors.length)];
+        } else {
+          color = { 1: 0x2d5a27, 2: 0x8B4513 }[tileType] || 0x4a7c4e;
+        }
+
+        graphics.fillStyle(color, 1);
         graphics.fillRect(px, py, TILE_SIZE, TILE_SIZE);
 
+        // Tree with leaves
         if (tileType === 1) {
+          // Trunk
           graphics.fillStyle(0x5C4033, 1);
           graphics.fillRect(px + 6, py + 8, 4, 8);
-        } else if (tileType === 2) {
+          // Leaves
+          graphics.fillStyle(0x2d5a27, 1);
+          graphics.fillCircle(px + 8, py + 6, 5);
+          graphics.fillStyle(0x3a6b32, 0.8);
+          graphics.fillCircle(px + 6, py + 4, 3);
+          graphics.fillCircle(px + 10, py + 5, 3);
+        }
+        // House with roof and door
+        else if (tileType === 2) {
+          // Walls
+          graphics.fillStyle(0x8B4513, 1);
+          graphics.fillRect(px + 2, py + 6, 12, 10);
+          // Roof
           graphics.fillStyle(0x654321, 1);
-          graphics.fillTriangle(px, py + 8, px + 8, py, px + 16, py + 8);
+          graphics.fillTriangle(px, py + 6, px + 8, py - 2, px + 16, py + 6);
+          // Door
+          graphics.fillStyle(0x3d2817, 1);
+          graphics.fillRect(px + 6, py + 10, 4, 6);
         }
       }
     }
   }
 
   getNPCFrame(key) {
-    const frames = { alaric: 15, borin: 23, vexis: 31, mira: 45 };
+    const frames = { alaric: 432, borin: 487, vexis: 433, mira: 325 };
     return frames[key] || 0;
   }
 
