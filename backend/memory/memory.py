@@ -37,3 +37,35 @@ def get_relevant_memories(npc_id, query_text, n_results=3):
         n_results=n_results
     )
     return results["documents"][0] if results["documents"] else []
+
+def get_all_memories(npc_id):
+    """Retrieve ALL memories for an NPC (for chat history)."""
+    try:
+        collection = get_npc_collection(npc_id)
+        results = collection.get()
+        if results and results['documents']:
+            # Return list of {text, timestamp} objects
+            memories = []
+            for i, doc in enumerate(results['documents']):
+                meta = results['metadatas'][i] if results['metadatas'] else {}
+                memories.append({
+                    'text': doc,
+                    'timestamp': meta.get('timestamp', 'unknown')
+                })
+            return memories
+        return []
+    except Exception as e:
+        print(f"Error getting memories: {e}")
+        return []
+
+def clear_memories(npc_id):
+    """Delete all memories for an NPC."""
+    try:
+        collection = chroma_client.get_or_create_collection(name=f"npc_{npc_id}")
+        results = collection.get()
+        if results and results['ids']:
+            collection.delete(ids=results['ids'])
+        return True
+    except Exception as e:
+        print(f"Error clearing memories: {e}")
+        return False

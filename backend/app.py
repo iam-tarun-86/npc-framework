@@ -1,81 +1,48 @@
 import os
 import json
+import sqlite3
 import requests
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-from memory.memory import add_memory, get_relevant_memories
-from relationship import get_mood, update_mood, get_facts, get_behavior_rules, extract_facts, update_behavior, get_situation_facts
+from memory.memory import add_memory, get_relevant_memories, clear_memories, get_all_memories
+from relationship import get_mood, update_mood, get_facts, get_behavior_rules, extract_facts, update_behavior, get_situation_facts, DB_PATH, init_db
 from intent_classifier import classify_intent
+from persona_engine import build_inner_monologue, build_system_prompt
 
 app = Flask(__name__)
 CORS(app)
 
 LLAMA_SERVER_URL = "http://localhost:8085/v1/chat/completions"
 
+# List of all NPC IDs
+ALL_NPCS = ['alaric', 'borin', 'vexis', 'mira']
+
 @app.route('/chat', methods=['POST'])
 def chat():
     data = request.json
-    npc_id = data.get("npc_id", "merchant_01")
+    npc_id = data.get("npc_id", "alaric")
     player_text = data.get("player_text", "")
     
     # Load NPC
-    with open(f"npcs/merchant.json", "r") as f:
+    with open(f"npcs/{npc_id}.json", "r") as f:
         npc = json.load(f)
     
     # Classify intent
     intent_result = classify_intent(player_text)
     intent = intent_result['intent']
     
-    # FIX: Name questions are friendly, not quest
     if intent == "quest" and any(phrase in player_text.lower() for phrase in ["my name", "who am i", "what is my name"]):
         intent = "friendly"
     
-    # Get mood
     mood = get_mood(npc_id)
-    
-    # Get episodic memories
+    facts = get_facts(npc_id)
+    behavior_rules = get_behavior_rules(npc_id)
     memories = get_relevant_memories(npc_id, player_text, n_results=3)
     
-    # Get semantic facts
-    facts = get_facts(npc_id)
+    thoughts = build_inner_monologue(npc, facts, mood, intent, behavior_rules)
+    system_prompt = build_system_prompt(npc, thoughts, intent)
     
-    # Get procedural behavior
-    behavior_rules = get_behavior_rules(npc_id)
-    
-    # Build character sheet with forgiveness logic
-    situation = get_situation_facts(npc_id, mood)
-    
-    # Mood-based attitude
-    if mood > 0.8:
-        situation.append("You almost like them")
-    elif mood > 0.6:
-        situation.append("You tolerate them")
-    elif mood > 0.4:
-        situation.append("You watch them")
-    elif mood > 0.2:
-        situation.append("You're annoyed")
-    else:
-        situation.append("You want them gone")
-    
-    situation_block = "\n".join([f"- {s}" for s in situation])
-    
-    # System prompt for Gemma 8B
-    system_prompt = f"""You are {npc['name']}, a {npc['role']}. {npc['personality']}
-
-Current situation:
-{situation_block}
-
-You sell: swords, daggers, armor, potions, shields. Prices vary by quality and your mood.
-
-How you talk:
-- Q: Who are you? A: Alaric. Sell steel. Coin or out.
-- Q: My name is Sarah A: Sarah. Don't care. Buy or leave.
-- Q: I want a sword A: Steel. Good price. Coin first.
-- Q: How much? A: [quote a price based on your mood]
-
-Now respond to the player. Short. Bitter. One or two sentences. If they ask prices, make up fair prices."""
-
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": player_text}
@@ -92,31 +59,117 @@ Now respond to the player. Short. Bitter. One or two sentences. If they ask pric
         response_data = response.json()
         npc_reply = response_data["choices"][0]["message"]["content"]
         
-        # Only save important interactions
-        if intent in ["hostile", "trade"] or "my name is" in player_text.lower():
-            add_memory(npc_id, f"Player: {player_text}")
-            add_memory(npc_id, f"{npc['name']}: {npc_reply}")
+        add_memory(npc_id, f"Player: {player_text}")
+        add_memory(npc_id, f"{npc['name']}: {npc_reply}")
         
-        # Extract semantic facts
         extract_facts(npc_id, player_text, npc_reply)
-        
-        # Update mood
+        facts = get_facts(npc_id)
         new_mood = update_mood(npc_id, intent)
-        
-        # Learn behavior
         update_behavior(npc_id, intent, new_mood)
+        new_thoughts = build_inner_monologue(npc, facts, new_mood, intent, behavior_rules)
         
         return jsonify({
             "reply": npc_reply,
             "debug": {
+                "npc_id": npc_id,
                 "intent_detected": f"{intent} (confidence: {intent_result['confidence']})",
                 "mood_score": round(new_mood, 2),
-                "situation": situation,
+                "thoughts": new_thoughts,
                 "facts": facts,
                 "behavior_rules": behavior_rules
             }
         })
     except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/all-memories', methods=['GET'])
+def get_all_npc_memories():
+    """Get memories and stats for ALL NPCs."""
+    try:
+        init_db()
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        
+        result = {}
+        for npc_id in ALL_NPCS:
+            # Get memories from ChromaDB
+            memories = get_all_memories(npc_id)
+            
+            # Get mood and interaction count
+            c.execute("SELECT mood_score, interaction_count FROM relationships WHERE npc_id = ?", (npc_id,))
+            row = c.fetchone()
+            mood = row[0] if row else 0.5
+            count = row[1] if row else 0
+            
+            # Get facts
+            c.execute("SELECT fact_type, fact_value FROM facts WHERE npc_id = ?", (npc_id,))
+            facts_rows = c.fetchall()
+            facts = {}
+            for ft, fv in facts_rows:
+                if ft not in facts:
+                    facts[ft] = []
+                facts[ft].append(fv)
+            
+            # Get NPC name
+            try:
+                with open(f"npcs/{npc_id}.json", "r") as f:
+                    npc_data = json.load(f)
+                    name = npc_data.get('name', npc_id)
+                    role = npc_data.get('role', 'Unknown')
+            except:
+                name = npc_id
+                role = 'Unknown'
+            
+            result[npc_id] = {
+                'name': name,
+                'role': role,
+                'mood': round(mood, 2),
+                'interaction_count': count,
+                'facts': facts,
+                'memories': memories,
+                'last_message': memories[-1]['text'] if memories else 'No conversation yet'
+            }
+        
+        conn.close()
+        return jsonify(result)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/memories', methods=['POST'])
+def get_memories():
+    data = request.json
+    npc_id = data.get("npc_id", "alaric")
+    
+    try:
+        memories = get_all_memories(npc_id)
+        return jsonify({"memories": memories})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/clear-memory', methods=['POST'])
+def clear_memory():
+    data = request.json
+    npc_id = data.get("npc_id", "alaric")
+    
+    try:
+        clear_memories(npc_id)
+        
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute("DELETE FROM facts WHERE npc_id = ?", (npc_id,))
+        c.execute("DELETE FROM behavior_rules WHERE npc_id = ?", (npc_id,))
+        c.execute("UPDATE relationships SET mood_score = 0.5, interaction_count = 0 WHERE npc_id = ?", (npc_id,))
+        conn.commit()
+        conn.close()
+        
+        return jsonify({"message": f"Memory cleared for {npc_id}"})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':

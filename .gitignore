@@ -37,6 +37,9 @@ backend/memory/chroma_store/
 # Node modules & build outputs
 node_modules/
 dist/
+dist-ssr/
+build/
+.eslintcache
 
 # IDE & Editor Settings
 .vscode/
@@ -62,9 +65,12 @@ htmlcov/
 .coverage
 
 # Local environment files
+.env
 .env.local
 .env.development
+.env.test
 .env.production
+*.local
 
 # Flask
 instance/
@@ -72,3 +78,4 @@ instance/
 
 # React build
 build/
+*:Zone.Identifier

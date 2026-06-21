@@ -18,9 +18,6 @@ def init_db():
         )
     ''')
     
-    # Drop old facts table if exists (to fix schema)
-    c.execute('DROP TABLE IF EXISTS facts')
-    
     # NEW: Semantic facts table with correct primary key
     c.execute('''
         CREATE TABLE IF NOT EXISTS facts (
@@ -60,7 +57,7 @@ def update_mood(npc_id, intent_label):
     
     adjustments = {
         "friendly": 0.1,
-        "hostile": -0.25,  # Was -0.15, now stronger penalty
+        "hostile": -0.25,
         "trade": 0.05,
         "quest": 0.05
     }
@@ -84,72 +81,98 @@ def update_mood(npc_id, intent_label):
 
 def extract_facts(npc_id, player_text, npc_reply):
     """Pull out important facts from conversation."""
+    import re
+    from datetime import datetime
+    
+    print(f"EXTRACT_FACTS START: npc_id={npc_id}")
+    
     facts = []
-    # DEBUG: See what Alaric actually says
-    print(f"DEBUG NPC_REPLY: '{npc_reply}'")
-    print(f"DEBUG PLAYER_TEXT: '{player_text}'")
-
-    print(f"EXTRACT_FACTS CALLED: npc_id={npc_id}, player_text='{player_text}', npc_reply='{npc_reply}'")
     
     # Find name
-    name_match = re.search(r"my name is (\w+)", player_text, re.IGNORECASE)
-    if name_match:
-        facts.append(("player_name", name_match.group(1)))
+    try:
+        name_match = re.search(r"my name is (\w+)", player_text, re.IGNORECASE)
+        if name_match:
+            facts.append(("player_name", name_match.group(1)))
+            print(f"FOUND NAME: {name_match.group(1)}")
+    except Exception as e:
+        print(f"NAME ERROR: {e}")
     
     # Find preferences
-    if any(word in player_text.lower() for word in ["sword", "weapon", "blade", "steel"]):
-        facts.append(("likes", "weapons"))
-    if any(word in player_text.lower() for word in ["quest", "mission", "job", "work", "task"]):
-        facts.append(("likes", "quests"))
-    if any(word in player_text.lower() for word in ["potion", "heal", "cure", "medicine"]):
-        facts.append(("likes", "potions"))
+    try:
+        if any(word in player_text.lower() for word in ["sword", "weapon", "blade", "steel"]):
+            facts.append(("likes", "weapons"))
+        if any(word in player_text.lower() for word in ["quest", "mission", "job", "work", "task"]):
+            facts.append(("likes", "quests"))
+        if any(word in player_text.lower() for word in ["potion", "heal", "cure", "medicine"]):
+            facts.append(("likes", "potions"))
+    except Exception as e:
+        print(f"PREF ERROR: {e}")
     
     # Find trust events
-    rude_words = ["scum", "idiot", "stupid", "worthless", "pathetic", "fool", "hate", "kill", "die"]
-    if any(word in player_text.lower() for word in rude_words):
-        facts.append(("trust", "was_rude"))
+    try:
+        rude_words = ["scum", "idiot", "stupid", "worthless", "pathetic", "fool", "hate", "kill", "die"]
+        if any(word in player_text.lower() for word in rude_words):
+            facts.append(("trust", "was_rude"))
+            print("FOUND: was_rude")
+    except Exception as e:
+        print(f"TRUST ERROR: {e}")
     
-    if any(word in player_text.lower() for word in ["buy", "purchase", "coin", "gold", "pay", "money"]):
-        facts.append(("trust", "paid_money"))
+    # Find paid events
+    try:
+        if any(word in player_text.lower() for word in ["buy", "purchase", "coin", "gold", "pay", "money"]):
+            facts.append(("trust", "paid_money"))
+    except Exception as e:
+        print(f"PAID ERROR: {e}")
     
-    #NEW: Track deals and prices
-    # Detect price mentions in NPC reply (digits OR number words)
-    price_patterns = [
-        r"(\d+)\s*(silver|gold|copper)",  # "4 silver", "10 gold"
-        r"(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty[- ]?\w*)\s*(silver|gold|copper|coin)",  # "six silver", "twenty-five coin"
-    ]
-    
-    price_match = None
-    for pattern in price_patterns:
-        match = re.search(pattern, npc_reply, re.IGNORECASE)
-        if match:
-            price_match = match
-            break
-    
-    if price_match:
-        price = price_match.group(0)
-        item = "unknown"
-        if any(word in player_text.lower() for word in ["sword", "blade", "steel"]):
-            item = "sword"
-        elif any(word in player_text.lower() for word in ["dagger", "knife"]):
-            item = "dagger"
-        elif any(word in player_text.lower() for word in ["armor", "shield"]):
-            item = "armor"
-        elif any(word in player_text.lower() for word in ["potion", "heal"]):
-            item = "potion"
+    # Track deals and prices
+    try:
+        price_patterns = [
+            r"(\d+)\s*(silver|gold|copper)",
+            r"(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty[- ]?\w*)\s*(silver|gold|copper|coin)",
+        ]
         
-        facts.append(("deal", f"{item}:{price}"))
+        price_match = None
+        for pattern in price_patterns:
+            match = re.search(pattern, npc_reply, re.IGNORECASE)
+            if match:
+                price_match = match
+                break
+        
+        if price_match:
+            price = price_match.group(0)
+            item = "unknown"
+            if any(word in player_text.lower() for word in ["sword", "blade", "steel"]):
+                item = "sword"
+            elif any(word in player_text.lower() for word in ["dagger", "knife"]):
+                item = "dagger"
+            elif any(word in player_text.lower() for word in ["armor", "shield"]):
+                item = "armor"
+            elif any(word in player_text.lower() for word in ["potion", "heal"]):
+                item = "potion"
+            
+            facts.append(("deal", f"{item}:{price}"))
+            print(f"FOUND DEAL: {item}:{price}")
+    except Exception as e:
+        print(f"DEAL ERROR: {e}")
     
     # Store in database
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    for fact_type, fact_value in facts:
-        c.execute('''
-            INSERT OR IGNORE INTO facts (npc_id, fact_type, fact_value, timestamp)
-            VALUES (?, ?, ?, ?)
-        ''', (npc_id, fact_type, fact_value, datetime.now().isoformat()))
-    conn.commit()
-    conn.close()
+    print(f"FACTS TO SAVE: {facts}")
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        for fact_type, fact_value in facts:
+            print(f"INSERTING: {fact_type}={fact_value}")
+            c.execute('''
+                INSERT OR IGNORE INTO facts (npc_id, fact_type, fact_value, timestamp)
+                VALUES (?, ?, ?, ?)
+            ''', (npc_id, fact_type, fact_value, datetime.now().isoformat()))
+        conn.commit()
+        conn.close()
+        print(f"FACTS SAVED SUCCESSFULLY: {len(facts)} facts")
+    except Exception as e:
+        print(f"DATABASE ERROR: {e}")
+        import traceback
+        traceback.print_exc()
 
 def get_facts(npc_id):
     """Get all known facts about this player."""
@@ -160,7 +183,6 @@ def get_facts(npc_id):
     rows = c.fetchall()
     conn.close()
     
-    # Convert to dictionary
     facts = {}
     for fact_type, fact_value in rows:
         if fact_type not in facts:
@@ -176,16 +198,13 @@ def get_situation_facts(npc_id, mood):
     
     situation = []
     
-    # Name
     name = facts.get("player_name", [None])[0]
     if name:
         situation.append(f"Customer: {name}")
     
-    # Past deals
     if deals:
         situation.append(f"Past deals: {', '.join(deals)}")
     
-    # Trust with forgiveness context
     if "was_rude" in trust:
         if mood > 0.8:
             situation.append("They were rude once, but you almost trust them now")
@@ -196,7 +215,6 @@ def get_situation_facts(npc_id, mood):
         else:
             situation.append("They insulted you. Want them gone.")
     
-    # Paid before?
     if "paid_money" in trust:
         situation.append("They paid before")
     
@@ -209,7 +227,6 @@ def update_behavior(npc_id, intent, mood):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     
-    # If player is often hostile, be defensive
     if intent == "hostile" and mood < 0.3:
         c.execute('''
             INSERT INTO behavior_rules (npc_id, trigger, response_style)
@@ -218,7 +235,6 @@ def update_behavior(npc_id, intent, mood):
                 response_style = excluded.response_style
         ''', (npc_id, "hostile_player", "very_short_angry"))
     
-    # If player spends money, be greedy but friendly
     if intent == "trade" and mood > 0.6:
         c.execute('''
             INSERT INTO behavior_rules (npc_id, trigger, response_style)
