@@ -94,16 +94,13 @@ def get_all_npc_memories():
         
         result = {}
         for npc_id in ALL_NPCS:
-            # Get memories from ChromaDB
             memories = get_all_memories(npc_id)
             
-            # Get mood and interaction count
             c.execute("SELECT mood_score, interaction_count FROM relationships WHERE npc_id = ?", (npc_id,))
             row = c.fetchone()
             mood = row[0] if row else 0.5
             count = row[1] if row else 0
             
-            # Get facts
             c.execute("SELECT fact_type, fact_value FROM facts WHERE npc_id = ?", (npc_id,))
             facts_rows = c.fetchall()
             facts = {}
@@ -112,7 +109,6 @@ def get_all_npc_memories():
                     facts[ft] = []
                 facts[ft].append(fv)
             
-            # Get NPC name
             try:
                 with open(f"npcs/{npc_id}.json", "r") as f:
                     npc_data = json.load(f)
@@ -167,6 +163,43 @@ def clear_memory():
         conn.close()
         
         return jsonify({"message": f"Memory cleared for {npc_id}"})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/clear-all-memories', methods=['POST'])
+def clear_all_memories():
+    """MASTER CLEAR: Delete ALL memories for ALL NPCs."""
+    data = request.json or {}
+    confirm = data.get("confirm", False)
+    
+    if not confirm:
+        return jsonify({"error": "Send confirm: true to wipe all memories"}), 400
+    
+    try:
+        cleared = []
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        
+        for npc_id in ALL_NPCS:
+            # Clear ChromaDB
+            clear_memories(npc_id)
+            
+            # Clear SQLite
+            c.execute("DELETE FROM facts WHERE npc_id = ?", (npc_id,))
+            c.execute("DELETE FROM behavior_rules WHERE npc_id = ?", (npc_id,))
+            c.execute("UPDATE relationships SET mood_score = 0.5, interaction_count = 0 WHERE npc_id = ?", (npc_id,))
+            cleared.append(npc_id)
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            "message": "ALL memories wiped",
+            "cleared_npcs": cleared,
+            "total": len(cleared)
+        })
     except Exception as e:
         import traceback
         traceback.print_exc()

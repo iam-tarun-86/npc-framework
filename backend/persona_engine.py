@@ -1,5 +1,5 @@
 def build_inner_monologue(npc, facts, mood, intent, behavior_rules):
-    """Build what Alaric FEELS, not what he should do."""
+    """Build what the NPC FEELS, not what they should do."""
     thoughts = []
     
     name = facts.get("player_name", [None])[0]
@@ -38,13 +38,18 @@ def build_inner_monologue(npc, facts, mood, intent, behavior_rules):
     return thoughts
 
 def build_system_prompt(npc, thoughts, intent):
-    """Minimal prompt — let the model be human."""
-    monologue = " ".join(thoughts)  # Flowing thoughts, not bullet points
+    """Minimal prompt — let the model be human, but constrained."""
+    monologue = " ".join(thoughts)
+    
+    # Get speech pattern from NPC data, fallback to generic
+    speech_pattern = npc.get('speech_pattern', 'Respond in 1-2 sentences. Be concise.')
     
     prompt = f"""You are {npc['name']}, a {npc['role']}. {npc['personality']}
 
 Right now: {monologue}
 
-Respond naturally. Don't explain yourself."""
+{speech_pattern}
+
+Respond naturally. Don't explain yourself. Stay in character. NEVER exceed the word limit."""
     
     return prompt

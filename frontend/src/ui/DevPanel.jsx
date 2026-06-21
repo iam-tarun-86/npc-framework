@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAllMemories, clearMemory } from '../api';
+import { getAllMemories, clearMemory, clearAllMemories } from '../api';
 
 const NPC_ICONS = {
   alaric: '🧙‍♂️',
@@ -13,13 +13,12 @@ export default function DevPanel({ debugData, onClose }) {
   const [selectedNPC, setSelectedNPC] = useState(null);
   const [loading, setLoading] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [masterClearing, setMasterClearing] = useState(false);
 
-  // Load all NPC data on mount
   useEffect(() => {
     loadAllData();
   }, []);
 
-  // Reload when debugData changes (new conversation)
   useEffect(() => {
     if (debugData?.npc_id) {
       loadAllData();
@@ -52,6 +51,35 @@ export default function DevPanel({ debugData, onClose }) {
     setClearing(false);
   }
 
+  async function handleMasterClear() {
+    if (!confirm("⚠️ WIPE ALL MEMORIES?\n\nThis will delete EVERYTHING:\n- All chat histories\n- All facts\n- All mood scores\n- All behavior rules\n\nFor ALL 4 NPCs.\n\nThis cannot be undone.")) return;
+    
+    if (!confirm("Are you ABSOLUTELY sure? Type 'yes' to confirm.")) return;
+    
+    setMasterClearing(true);
+    try {
+      const result = await clearAllMemories();
+      await loadAllData();
+      setSelectedNPC(null);
+      alert(`✅ Wiped ${result.total} NPCs: ${result.cleared_npcs.join(', ')}`);
+    } catch (e) {
+      alert("Failed to wipe: " + e.message);
+    }
+    setMasterClearing(false);
+  }
+
+  useEffect(() => {
+    const handler = (e) => {
+      const data = e.detail?.debug || e.detail;
+      if (data) {
+        loadAllData();
+        if (data.npc_id) setSelectedNPC(data.npc_id);
+      }
+    };
+    window.addEventListener('debug-update', handler);
+    return () => window.removeEventListener('debug-update', handler);
+  }, []);
+
   const selectedData = selectedNPC ? allData[selectedNPC] : null;
 
   return (
@@ -59,7 +87,17 @@ export default function DevPanel({ debugData, onClose }) {
       {/* Header */}
       <div className="flex justify-between items-center p-3 border-b border-gray-700">
         <h3 className="text-amber-400 font-bold">🔧 Dev Panel</h3>
-        <button onClick={onClose} className="text-gray-400 hover:text-white">✕</button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleMasterClear}
+            disabled={masterClearing}
+            className="bg-red-800 hover:bg-red-900 text-white px-2 py-1 rounded text-xs font-bold disabled:opacity-50"
+            title="Wipe ALL NPC memories"
+          >
+            {masterClearing ? '...' : '💥 MASTER CLEAR'}
+          </button>
+          <button onClick={onClose} className="text-gray-400 hover:text-white">✕</button>
+        </div>
       </div>
 
       {/* Content */}

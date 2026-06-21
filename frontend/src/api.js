@@ -34,3 +34,12 @@ export async function clearMemory(npc_id) {
   });
   return res.json();
 }
+
+export async function clearAllMemories() {
+  const res = await fetch(`${API_URL}/clear-all-memories`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ confirm: true }),
+  });
+  return res.json();
+}
