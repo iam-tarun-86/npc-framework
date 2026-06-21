@@ -19,11 +19,11 @@ export default function App() {
       const data = e.detail?.debug || e.detail;
       if (data) setDebugData(data);
     };
-    
+
     window.addEventListener('start-dialogue', startHandler);
     window.addEventListener('toggle-dev', devHandler);
     window.addEventListener('debug-update', debugHandler);
-    
+
     return () => {
       window.removeEventListener('start-dialogue', startHandler);
       window.removeEventListener('toggle-dev', devHandler);
@@ -40,14 +40,14 @@ export default function App() {
     <div className="fixed inset-0 bg-gray-900 overflow-hidden">
       <GameCanvas />
       <Hud />
-      
+
       {dialogueNPC && (
-        <DialogueOverlay 
-          npcData={dialogueNPC} 
+        <DialogueOverlay
+          npcData={dialogueNPC}
           onClose={handleCloseDialogue}
         />
       )}
-      
+
       <button
         onClick={() => setDevOpen(!devOpen)}
         className="fixed top-2 right-2 z-50 w-8 h-8 bg-gray-700/80 hover:bg-gray-600 text-gray-400 hover:text-white rounded text-xs flex items-center justify-center transition"
@@ -55,7 +55,7 @@ export default function App() {
       >
         🔧
       </button>
-      
+
       {devOpen && <DevPanel debugData={debugData} onClose={() => setDevOpen(false)} />}
     </div>
   );
