@@ -18,6 +18,54 @@ LLAMA_SERVER_URL = "http://localhost:8085/v1/chat/completions"
 # List of all NPC IDs
 ALL_NPCS = ['alaric', 'borin', 'vexis', 'mira']
 
+# PLAYER INVENTORY — must be at TOP, before any endpoint uses it
+player_inventory = {
+    "coins": 10,
+    "items": []
+}
+
+# ========== BUY ENDPOINT ==========
+@app.route('/buy', methods=['POST'])
+def buy():
+    data = request.json
+    npc_id = data.get("npc_id")
+    item = data.get("item", "").lower().strip()
+    
+    with open(f"npcs/{npc_id}.json", "r") as f:
+        npc = json.load(f)
+    
+    price_str = npc.get("inventory", {}).get(item)
+    if not price_str:
+        return jsonify({"error": "Don't sell that."}), 400  # ← jsonify + status code
+    
+    try:
+        price = int(price_str.split()[0])
+    except:
+        return jsonify({"error": "Price unclear."}), 400
+    
+    if player_inventory["coins"] < price:
+        return jsonify({"error": f"Need {price} silver. You have {player_inventory['coins']}."}), 400
+    
+    # Transaction
+    player_inventory["coins"] -= price
+    player_inventory["items"].append(item)
+    
+    add_memory(npc_id, f"deal:{item}:{price} coin")
+    
+    return jsonify({  # ← jsonify here too
+        "success": True,
+        "item": item,
+        "price": price,
+        "coins_left": player_inventory["coins"],
+        "inventory": player_inventory["items"]
+    })
+
+# ========== PLAYER STATS ENDPOINT ==========
+@app.route('/player', methods=['GET'])
+def get_player():
+    return jsonify(player_inventory)
+
+# ========== CHAT ENDPOINT ==========
 @app.route('/chat', methods=['POST'])
 def chat():
     data = request.json
@@ -38,7 +86,7 @@ def chat():
     mood = get_mood(npc_id)
     facts = get_facts(npc_id)
     behavior_rules = get_behavior_rules(npc_id)
-    memories = get_all_memories(npc_id)  # ← Clean: one fetch
+    memories = get_all_memories(npc_id)
     
     thoughts = build_inner_monologue(npc, facts, mood, intent, behavior_rules)
     system_prompt = build_system_prompt(npc, thoughts, intent, facts, memories, behavior_rules)
@@ -57,8 +105,6 @@ def chat():
             messages.append({"role": "assistant", "content": npc_text})
     
     messages.append({"role": "user", "content": player_text})
-    
-    # ... rest same
     
     payload = {
         "model": "gemma",
@@ -216,6 +262,7 @@ def clear_all_memories():
         import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)

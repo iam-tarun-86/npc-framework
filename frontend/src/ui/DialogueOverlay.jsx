@@ -15,14 +15,55 @@ export default function DialogueOverlay({ npcData, onClose }) {
 
   async function handleSend() {
     if (!input.trim() || loading) return;
-    const userText = input.trim();
-    setInput('');
+    const rawText = input.trim();
+    const userText = rawText.toLowerCase();
+
+    // Detect buy intent
+    const buyPatterns = [
+      /(?:buy|get|take|want|give me)\s+(?:a|an|the)?\s*(.+)/,
+      /(?:how much for|price of)\s+(.+)/,
+    ];
+
+    const buyMatch = buyPatterns.find(p => p.test(userText));
+    if (buyMatch && npcData.npcId === 'alaric') {
+      const item = userText.match(buyMatch)[1].trim();
+
+      setLoading(true);
+      setInput(''); // ← CLEAR INPUT IMMEDIATELY
+
+      try {
+        const res = await fetch('http://localhost:5000/buy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ npc_id: npcData.npcId, item })
+        });
+
+        const data = await res.json(); // ← This needs proper JSON from backend
+
+        if (data.error) {
+          setMessages(prev => [...prev, { role: 'npc', text: data.error }]);
+        } else {
+          setMessages(prev => [...prev, {
+            role: 'npc',
+            text: `Grrr. ${data.item}. ${data.price} coin paid. ${data.coins_left} left. Now out.`
+          }]);
+        }
+      } catch (e) {
+        setMessages(prev => [...prev, { role: 'npc', text: "Something broke. Try again." }]);
+        console.error("Buy failed:", e);
+      }
+
+      setLoading(false);
+      return;
+    }
+
+    // Normal chat flow
+    const userMsg = { role: 'user', text: rawText }; // ← Use rawText (preserves case)
+    setMessages(prev => [...prev, userMsg]);
+    setInput(''); // ← CLEAR INPUT
     setLoading(true);
 
-    const userMsg = { role: 'user', text: userText };
-    setMessages(prev => [...prev, userMsg]);
-
-    const data = await sendMessage(npcData.npcId, userText);
+    const data = await sendMessage(npcData.npcId, rawText); // ← Use rawText
 
     if (data.debug) {
       window.dispatchEvent(new CustomEvent('debug-update', {
@@ -92,11 +133,10 @@ export default function DialogueOverlay({ npcData, onClose }) {
                 key={i}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
               >
-                <div className={`max-w-[80%] px-4 py-2.5 rounded-lg text-sm leading-relaxed ${
-                  msg.role === 'user'
-                    ? 'bg-blue-900/40 text-blue-100 border border-blue-500/20'
-                    : 'bg-slate-700/50 text-slate-200 border-l-2 border-amber-500/50'
-                }`}>
+                <div className={`max-w-[80%] px-4 py-2.5 rounded-lg text-sm leading-relaxed ${msg.role === 'user'
+                  ? 'bg-blue-900/40 text-blue-100 border border-blue-500/20'
+                  : 'bg-slate-700/50 text-slate-200 border-l-2 border-amber-500/50'
+                  }`}>
                   {msg.text}
                 </div>
               </div>
