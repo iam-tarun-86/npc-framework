@@ -38,15 +38,27 @@ def chat():
     mood = get_mood(npc_id)
     facts = get_facts(npc_id)
     behavior_rules = get_behavior_rules(npc_id)
-    memories = get_relevant_memories(npc_id, player_text, n_results=3)
+    memories = get_all_memories(npc_id)  # ← Clean: one fetch
     
     thoughts = build_inner_monologue(npc, facts, mood, intent, behavior_rules)
-    system_prompt = build_system_prompt(npc, thoughts, intent)
+    system_prompt = build_system_prompt(npc, thoughts, intent, facts, memories, behavior_rules)
     
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": player_text}
-    ]
+    # Build messages with history
+    messages = [{"role": "system", "content": system_prompt}]
+
+    recent_memories = memories[-4:] if memories else []
+    for mem in recent_memories:
+        if mem['text'].startswith('Player:'):
+            messages.append({"role": "user", "content": mem['text'][7:].strip()})
+        else:
+            npc_text = mem['text']
+            if ':' in npc_text:
+                npc_text = npc_text.split(':', 1)[1].strip()
+            messages.append({"role": "assistant", "content": npc_text})
+    
+    messages.append({"role": "user", "content": player_text})
+    
+    # ... rest same
     
     payload = {
         "model": "gemma",

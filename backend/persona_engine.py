@@ -4,7 +4,6 @@ def build_inner_monologue(npc, facts, mood, intent, behavior_rules):
     
     name = facts.get("player_name", [None])[0]
     
-    # Base recognition
     if name:
         if mood > 0.6:
             thoughts.append(f"{name} again. Regular.")
@@ -15,7 +14,6 @@ def build_inner_monologue(npc, facts, mood, intent, behavior_rules):
     else:
         thoughts.append("New face.")
     
-    # Mood as feeling, not label
     if mood > 0.7:
         thoughts.append("Don't mind this one.")
     elif mood > 0.4:
@@ -25,7 +23,6 @@ def build_inner_monologue(npc, facts, mood, intent, behavior_rules):
     else:
         thoughts.append("Want them gone.")
     
-    # Intent as situation
     if intent == "trade":
         thoughts.append("Wants to buy.")
     elif intent == "hostile":
@@ -37,19 +34,72 @@ def build_inner_monologue(npc, facts, mood, intent, behavior_rules):
     
     return thoughts
 
-def build_system_prompt(npc, thoughts, intent):
-    """Minimal prompt — let the model be human, but constrained."""
-    monologue = " ".join(thoughts)
+
+def format_facts(facts):
+    """Convert facts dict to readable string."""
+    if not facts:
+        return "Nothing yet."
     
-    # Get speech pattern from NPC data, fallback to generic
+    lines = []
+    for fact_type, values in facts.items():
+        if fact_type == "player_name":
+            lines.append(f"Player's name is {values[0]}.")
+        elif fact_type == "trust":
+            lines.append(f"Player is: {', '.join(values)}.")
+        elif fact_type == "likes":
+            lines.append(f"Player likes: {', '.join(values)}.")
+        elif fact_type == "deal":
+            lines.append(f"Past deals: {', '.join(values)}.")
+        else:
+            lines.append(f"{fact_type}: {', '.join(values)}.")
+    
+    return " ".join(lines)
+
+
+def format_history(memories, max_turns=3):
+    """Get last N conversation turns."""
+    if not memories or len(memories) == 0:
+        return "No prior conversation."
+    
+    recent = memories[-max_turns * 2:]
+    return "\n".join([m['text'] for m in recent])
+
+
+def build_system_prompt(npc, thoughts, intent, facts, memories, behavior_rules):
+    monologue = " ".join(thoughts)
     speech_pattern = npc.get('speech_pattern', 'Respond in 1-2 sentences. Be concise.')
+    
+    facts_text = format_facts(facts)
+    history_text = format_history(memories)
+    
+    # Add inventory if exists
+    inventory_text = ""
+    if 'inventory' in npc:
+        items = [f"{item}: {price}" for item, price in npc['inventory'].items()]
+        inventory_text = "\nYour prices:\n" + "\n".join(items)
+    
+    behavior_hint = ""
+    if behavior_rules:
+        rules = [f"- {k}: {v}" for k, v in behavior_rules.items()]
+        behavior_hint = "\nLearned patterns:\n" + "\n".join(rules)
     
     prompt = f"""You are {npc['name']}, a {npc['role']}. {npc['personality']}
 
 Right now: {monologue}
 
+Facts you remember: {facts_text}
+
+Recent conversation:
+{history_text}{inventory_text}{behavior_hint}
+
 {speech_pattern}
 
-Respond naturally. Don't explain yourself. Stay in character. NEVER exceed the word limit."""
-    
+CRITICAL RULES:
+- Use the facts above. NEVER make up information not listed.
+- If asked something you know, answer directly using the fact.
+- If asked something you don't know, say so briefly.
+- NEVER repeat your previous response word-for-word.
+- Vary your wording each time. NEVER say the exact same sentence twice.
+- Stay in character. NEVER exceed the word limit."""
+
     return prompt
