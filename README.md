@@ -176,4 +176,4 @@ Open the developer view panel using the **Tab key** or the gear icon. It provide
 
 ---
 
-> *"In a world of static scripts, the best dialogue is an autonomous monologue."* — **Alaric**
+> *"In a scripted world, the best conversation is an autonomous memory."* — **Elder Mira**
