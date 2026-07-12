@@ -176,5 +176,4 @@ Open the developer view panel using the **Tab key** or the gear icon. It provide
 
 ---
 
-> [!IMPORTANT]
-> **A Final Word of Warning:** If Alaric charges you 15 silver coins for a wooden spear, do not try to negotiate or debug his system prompt. He has survived three sieges, has two missing fingers, and his inner monologue has absolutely zero tolerance for your customer feedback.
+> *"In a world of static scripts, the best dialogue is an autonomous monologue."* — **Alaric**
