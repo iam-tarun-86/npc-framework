@@ -173,3 +173,8 @@ Open the developer view panel using the **Tab key** or the gear icon. It provide
 3.  **Episodic Log:** Full scrollable dialogue logs stored in ChromaDB vector memory.
 4.  **Semantic Map:** The relational database facts extracted from conversations.
 5.  **Master Wipes:** Clear individual NPC databases or trigger a "Master Wipe" to completely reset all SQLite and ChromaDB data for a clean gameplay run.
+
+---
+
+> [!IMPORTANT]
+> **A Final Word of Warning:** If Alaric charges you 15 silver coins for a wooden spear, do not try to negotiate or debug his system prompt. He has survived three sieges, has two missing fingers, and his inner monologue has absolutely zero tolerance for your customer feedback.
