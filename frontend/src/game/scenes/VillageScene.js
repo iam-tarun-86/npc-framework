@@ -87,9 +87,12 @@ export default class VillageScene extends Phaser.Scene {
     this.alaricX = NPC_POSITIONS.alaric.x * TILE_SIZE;
     this.alaricY = NPC_POSITIONS.alaric.y * TILE_SIZE;
     
-    // Check patrol every 45 seconds
+    // Start first patrol after 5 seconds so the user doesn't wait 45 seconds to see him move
+    this.time.delayedCall(5000, this.startPatrol, [], this);
+
+    // Check patrol every 25 seconds
     this.time.addEvent({
-      delay: 45000,
+      delay: 25000,
       callback: this.startPatrol,
       callbackScope: this,
       loop: true
@@ -237,8 +240,8 @@ export default class VillageScene extends Phaser.Scene {
       npc.speechBubble.destroy();
     }
     
-    // Position text bubble above their label and emote label
-    npc.speechBubble = this.add.text(npc.x, npc.y - 48, text, {
+    // Position text bubble below their feet/shadow to avoid top screen cutoff
+    npc.speechBubble = this.add.text(npc.x, npc.y + 24, text, {
       fontSize: '8px',
       color: '#ffffff',
       backgroundColor: '#1e293b',
@@ -250,7 +253,7 @@ export default class VillageScene extends Phaser.Scene {
     // Keep bubble anchored if sprite is moved/idle-bobbing
     this.tweens.add({
       targets: npc.speechBubble,
-      y: npc.y - 50,
+      y: npc.y + 26,
       duration: 1000,
       yoyo: true,
       repeat: -1,
