@@ -107,6 +107,26 @@ export default function DevView({ npcId = "merchant_01" }) {
                             </p>
                         </div>
 
+                        {/* Surprise (CO4) */}
+                        <div className="bg-gray-800 rounded-lg p-4">
+                            <h3 className="text-amber-400 font-bold mb-3 text-sm uppercase tracking-wide">😮 Autoencoder Surprise</h3>
+                            <div className="flex items-center gap-3">
+                                <span className={`px-3 py-1 rounded-full text-sm font-bold ${
+                                    debug.surprise_triggered 
+                                        ? 'bg-amber-900 text-amber-200 border border-amber-500/30' 
+                                        : 'bg-gray-700 text-gray-400'
+                                }`}>
+                                    {debug.surprise_triggered ? "Surprised" : "Calm"}
+                                </span>
+                                <span className="text-white font-mono text-sm">
+                                    Loss: {debug.surprise_score?.toFixed(6) || "0.000000"}
+                                </span>
+                            </div>
+                            <p className="text-gray-400 text-xs mt-2">
+                                Measures out-of-distribution sentence embeddings (Syllabus: CO4).
+                            </p>
+                        </div>
+
                         {/* Situation */}
                         <div className="bg-gray-800 rounded-lg p-4">
                             <h3 className="text-blue-400 font-bold mb-3 text-sm uppercase tracking-wide">📍 Current Situation</h3>

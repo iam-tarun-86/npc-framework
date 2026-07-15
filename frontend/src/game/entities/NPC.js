@@ -34,18 +34,63 @@ export default class NPC extends Phaser.GameObjects.Sprite {
       backgroundColor: '#0f172a99',
       padding: { x: 3, y: 1 }
     }).setOrigin(0.5).setDepth(11);
+
+    // Emote label hovering above Name
+    this.emoteLabel = scene.add.text(this.x, this.y - 36, '', {
+      fontSize: '12px',
+      padding: { x: 2, y: 2 }
+    }).setOrigin(0.5).setDepth(12);
   }
 
   preUpdate(time, delta) {
     super.preUpdate(time, delta);
-    // Keep label and shadow synced with sprite position
+    // Keep labels and shadow synced with sprite position
     if (this.label) {
       this.label.x = this.x;
       this.label.y = this.y - 22;
     }
+    if (this.emoteLabel) {
+      this.emoteLabel.x = this.x;
+      this.emoteLabel.y = this.y - 36;
+    }
     if (this.shadow) {
       this.shadow.x = this.x;
       this.shadow.y = this.y + 8;
+    }
+  }
+
+  setEmote(type) {
+    if (!this.emoteLabel) return;
+    
+    let emoji = '';
+    switch(type) {
+      case 'surprised':
+        emoji = '❓';
+        break;
+      case 'angry':
+        emoji = '💢';
+        break;
+      case 'happy':
+        emoji = '💚';
+        break;
+      case 'chatting':
+        emoji = '💬';
+        break;
+      default:
+        emoji = '';
+    }
+    
+    this.emoteLabel.setText(emoji);
+    
+    // Add a bounce tween when emote changes!
+    if (emoji) {
+      this.scene.tweens.add({
+        targets: this.emoteLabel,
+        scale: { from: 0.5, to: 1.2 },
+        yoyo: true,
+        duration: 150,
+        ease: 'Back.easeOut'
+      });
     }
   }
 

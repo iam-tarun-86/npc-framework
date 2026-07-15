@@ -1,4 +1,4 @@
-def build_inner_monologue(npc, facts, mood, intent, behavior_rules):
+def build_inner_monologue(npc, facts, mood, intent, behavior_rules, surprise=False):
     """Build what the NPC FEELS, not what they should do."""
     thoughts = []
     
@@ -31,6 +31,9 @@ def build_inner_monologue(npc, facts, mood, intent, behavior_rules):
         thoughts.append("Asking for favors.")
     elif intent == "friendly":
         thoughts.append("Being nice. Why?")
+    
+    if surprise:
+        thoughts.append("They make no sense. Confusing statement. Suspicious.")
     
     return thoughts
 
@@ -65,9 +68,12 @@ def format_history(memories, max_turns=3):
     return "\n".join([m['text'] for m in recent])
 
 
-def build_system_prompt(npc, thoughts, intent, facts, memories, behavior_rules):
+def build_system_prompt(npc, thoughts, intent, facts, memories, behavior_rules, surprise=False):
     monologue = " ".join(thoughts)
     speech_pattern = npc.get('speech_pattern', 'Respond in 1-2 sentences. Be concise.')
+    
+    if surprise:
+        speech_pattern += " You are confused and highly suspicious of their last statement. Ask them what they mean, remaining strictly in character."
     
     facts_text = format_facts(facts)
     history_text = format_history(memories)

@@ -1,0 +1,7 @@
+{
+    "input_dim": 384,
+    "latent_dim": 32,
+    "mean_reconstruction_loss": 0.000652,
+    "std_reconstruction_loss": 0.000256,
+    "surprise_threshold": 0.0020
+}

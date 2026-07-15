@@ -25,11 +25,15 @@ export default function DialogueOverlay({ npcData, onClose }) {
     ];
 
     const buyMatch = buyPatterns.find(p => p.test(userText));
+    let buySucceeded = false;
+    let buyAttempted = false;
+    let buyErrorMsg = "";
+
     if (buyMatch && npcData.npcId === 'alaric') {
       const item = userText.match(buyMatch)[1].trim();
-
+      buyAttempted = true;
       setLoading(true);
-      setInput(''); // ← CLEAR INPUT IMMEDIATELY
+      setInput('');
 
       try {
         const res = await fetch('http://localhost:5000/buy', {
@@ -37,42 +41,57 @@ export default function DialogueOverlay({ npcData, onClose }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ npc_id: npcData.npcId, item })
         });
-
-        const data = await res.json(); // ← This needs proper JSON from backend
-
-        if (data.error) {
-          setMessages(prev => [...prev, { role: 'npc', text: data.error }]);
-        } else {
+        const data = await res.json();
+        
+        if (!data.error) {
+          buySucceeded = true;
           setMessages(prev => [...prev, {
             role: 'npc',
             text: `Grrr. ${data.item}. ${data.price} coin paid. ${data.coins_left} left. Now out.`
           }]);
+        } else {
+          buyErrorMsg = data.error;
         }
       } catch (e) {
-        setMessages(prev => [...prev, { role: 'npc', text: "Something broke. Try again." }]);
         console.error("Buy failed:", e);
       }
+    }
 
+    // If we attempted to buy and succeeded, we are done
+    if (buySucceeded) {
       setLoading(false);
       return;
     }
 
-    // Normal chat flow
-    const userMsg = { role: 'user', text: rawText }; // ← Use rawText (preserves case)
-    setMessages(prev => [...prev, userMsg]);
-    setInput(''); // ← CLEAR INPUT
-    setLoading(true);
-
-    const data = await sendMessage(npcData.npcId, rawText); // ← Use rawText
-
-    if (data.debug) {
-      window.dispatchEvent(new CustomEvent('debug-update', {
-        detail: { debug: data.debug }
-      }));
+    // If we attempted to buy and failed because the item wasn't sold, we fallback to normal chat.
+    // If it was another error (like insufficient coins), we display it and stop.
+    if (buyAttempted && buyErrorMsg && buyErrorMsg !== "Don't sell that.") {
+      setMessages(prev => [...prev, { role: 'npc', text: buyErrorMsg }]);
+      setLoading(false);
+      return;
     }
 
-    const npcMsg = { role: 'npc', text: data.reply || data.error || '...' };
-    setMessages(prev => [...prev, npcMsg]);
+    // Normal chat flow (runs for regular messages, or if buy flow failed with "Don't sell that.")
+    const userMsg = { role: 'user', text: rawText };
+    setMessages(prev => [...prev, userMsg]);
+    setInput('');
+    setLoading(true);
+
+    try {
+      const data = await sendMessage(npcData.npcId, rawText);
+
+      if (data.debug) {
+        window.dispatchEvent(new CustomEvent('debug-update', {
+          detail: { debug: data.debug }
+        }));
+      }
+
+      const npcMsg = { role: 'npc', text: data.reply || data.error || '...' };
+      setMessages(prev => [...prev, npcMsg]);
+    } catch (e) {
+      setMessages(prev => [...prev, { role: 'npc', text: "Something broke. Try again." }]);
+      console.error("Chat failed:", e);
+    }
     setLoading(false);
   }
 

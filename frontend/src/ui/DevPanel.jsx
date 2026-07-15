@@ -51,6 +51,7 @@ export default function DevPanel({ debugData, onClose }) {
   const [loading, setLoading] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [masterClearing, setMasterClearing] = useState(false);
+  const [latestDebug, setLatestDebug] = useState(null);
 
   useEffect(() => {
     loadAllData();
@@ -68,6 +69,7 @@ export default function DevPanel({ debugData, onClose }) {
     try {
       const data = await getAllMemories();
       setAllData(data);
+      window.dispatchEvent(new CustomEvent('npc-state-update', { detail: data }));
     } catch (e) {
       console.error("Failed to load all memories:", e);
     }
@@ -110,6 +112,7 @@ export default function DevPanel({ debugData, onClose }) {
       const data = e.detail?.debug || e.detail;
       if (data) {
         loadAllData();
+        setLatestDebug(data);
         if (data.npc_id) setSelectedNPC(data.npc_id);
       }
     };
@@ -221,6 +224,23 @@ export default function DevPanel({ debugData, onClose }) {
                     <div className="text-slate-200 font-bold text-lg">{selectedData.interaction_count}</div>
                     <div className="text-slate-500 text-xs mt-1">total chats</div>
                   </div>
+                  {latestDebug && latestDebug.npc_id === selectedNPC && latestDebug.surprise_score !== undefined && (
+                    <div className="col-span-2 bg-slate-800/50 rounded-lg p-3 border border-slate-700/30 flex items-center justify-between">
+                      <div>
+                        <span className="text-amber-400 text-xs font-medium">Autoencoder Surprise (CO4)</span>
+                        <div className="text-slate-200 text-sm font-mono mt-0.5">
+                          Loss: {latestDebug.surprise_score.toFixed(6)}
+                        </div>
+                      </div>
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                        latestDebug.surprise_triggered 
+                          ? 'bg-amber-900/60 text-amber-300 border border-amber-500/30 animate-pulse' 
+                          : 'bg-slate-700 text-slate-400'
+                      }`}>
+                        {latestDebug.surprise_triggered ? '🔥 SURPRISED' : '👤 CALM'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </CollapsibleSection>
 

@@ -55,6 +55,45 @@ export default class VillageScene extends Phaser.Scene {
         window.dispatchEvent(new CustomEvent('toggle-dev'));
       }
     });
+
+    // Listen to npc-state-update to set dynamic mood emotes
+    window.addEventListener('npc-state-update', (event) => {
+      const data = event.detail;
+      Object.entries(data).forEach(([npcId, npcState]) => {
+        const npcObj = this.npcs[npcId];
+        if (npcObj && this.borinState === 'idle') {
+          const lastMem = npcState.memories && npcState.memories.length > 0
+            ? npcState.memories.slice().reverse().find(m => m.text.startsWith('Player:'))
+            : null;
+          const isSurprised = lastMem ? lastMem.is_core : false;
+          
+          if (isSurprised) {
+            npcObj.setEmote('surprised');
+          } else if (npcState.mood < 0.35) {
+            npcObj.setEmote('angry');
+          } else if (npcState.mood > 0.70) {
+            npcObj.setEmote('happy');
+          } else {
+            npcObj.setEmote('clear');
+          }
+        }
+      });
+    });
+
+    // Patrol cycle variables
+    this.borinState = 'idle'; // 'idle', 'patrolling', 'chatting', 'returning'
+    this.borinOriginalX = NPC_POSITIONS.borin.x * TILE_SIZE;
+    this.borinOriginalY = NPC_POSITIONS.borin.y * TILE_SIZE;
+    this.alaricX = NPC_POSITIONS.alaric.x * TILE_SIZE;
+    this.alaricY = NPC_POSITIONS.alaric.y * TILE_SIZE;
+    
+    // Check patrol every 45 seconds
+    this.time.addEvent({
+      delay: 45000,
+      callback: this.startPatrol,
+      callbackScope: this,
+      loop: true
+    });
   }
 
   createMap() {
@@ -129,6 +168,9 @@ export default class VillageScene extends Phaser.Scene {
 
     let nearNPC = null;
     Object.entries(this.npcs).forEach(([key, npc]) => {
+      // Prevent talking to Borin while he is patrolling or chatting
+      if (key === 'borin' && this.borinState !== 'idle') return;
+
       const canTalk = npc.canInteract(this.player);
       if (canTalk) nearNPC = npc;
     });
@@ -143,5 +185,140 @@ export default class VillageScene extends Phaser.Scene {
       window.dispatchEvent(new CustomEvent('start-dialogue', { detail: data }));
       window.dispatchEvent(new CustomEvent('dialogue-open'));
     }
+  }
+
+  startPatrol() {
+    // Only patrol if idle and player is not talking to anyone
+    if (this.borinState === 'idle' && !this.dialogueOpen && this.npcs.borin && this.npcs.alaric) {
+      this.borinState = 'patrolling';
+      
+      // Slide Borin to Alaric's shop
+      this.tweens.add({
+        targets: this.npcs.borin,
+        x: this.alaricX + 24, // Stand slightly next to Alaric's shop counter
+        y: this.alaricY,
+        duration: 3500,
+        ease: 'Power1',
+        onComplete: () => {
+          this.triggerNPCChat();
+        }
+      });
+    }
+  }
+
+  async triggerNPCChat() {
+    this.borinState = 'chatting';
+    
+    // Set speech bubble emotes for active status
+    this.npcs.borin.setEmote('chatting');
+    this.npcs.alaric.setEmote('chatting');
+    
+    try {
+      const res = await fetch('http://localhost:5000/npc-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ npc_id_1: 'borin', npc_id_2: 'alaric' })
+      });
+      const data = await res.json();
+      
+      if (data.transcript) {
+        this.displayNPCTranscript(data.transcript);
+      } else {
+        this.endNPCChat();
+      }
+    } catch (e) {
+      console.error("NPC-to-NPC chat trigger failed:", e);
+      this.endNPCChat();
+    }
+  }
+
+  showSpeechBubble(npc, text) {
+    if (npc.speechBubble) {
+      npc.speechBubble.destroy();
+    }
+    
+    // Position text bubble above their label and emote label
+    npc.speechBubble = this.add.text(npc.x, npc.y - 48, text, {
+      fontSize: '8px',
+      color: '#ffffff',
+      backgroundColor: '#1e293b',
+      padding: { x: 5, y: 3 },
+      wordWrap: { width: 120 },
+      align: 'center'
+    }).setOrigin(0.5).setDepth(15);
+
+    // Keep bubble anchored if sprite is moved/idle-bobbing
+    this.tweens.add({
+      targets: npc.speechBubble,
+      y: npc.y - 50,
+      duration: 1000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut'
+    });
+  }
+
+  displayNPCTranscript(transcript) {
+    let turn = 0;
+    
+    const showNextTurn = () => {
+      if (this.dialogueOpen) {
+        // If player suddenly opens a dialogue (with someone else), abort patrol chat
+        if (this.npcs.borin.speechBubble) this.npcs.borin.speechBubble.destroy();
+        if (this.npcs.alaric.speechBubble) this.npcs.alaric.speechBubble.destroy();
+        this.endNPCChat();
+        return;
+      }
+
+      if (turn >= transcript.length) {
+        if (this.npcs.borin.speechBubble) this.npcs.borin.speechBubble.destroy();
+        if (this.npcs.alaric.speechBubble) this.npcs.alaric.speechBubble.destroy();
+        this.endNPCChat();
+        return;
+      }
+      
+      const current = transcript[turn];
+      const speakerNPC = this.npcs[current.speaker];
+      const listenerNPC = current.speaker === 'borin' ? this.npcs.alaric : this.npcs.borin;
+      
+      // Clear listener's speech bubble
+      if (listenerNPC && listenerNPC.speechBubble) {
+        listenerNPC.speechBubble.destroy();
+      }
+      
+      // Trigger speech bubble
+      if (speakerNPC) {
+        this.showSpeechBubble(speakerNPC, current.text);
+      }
+      
+      turn++;
+      // Wait 4.5 seconds per turn
+      this.time.delayedCall(4500, showNextTurn);
+    };
+    
+    showNextTurn();
+  }
+
+  endNPCChat() {
+    this.npcs.borin.setEmote('clear');
+    this.npcs.alaric.setEmote('clear');
+    
+    this.borinState = 'returning';
+    
+    // Return Borin to guard post
+    this.tweens.add({
+      targets: this.npcs.borin,
+      x: this.borinOriginalX,
+      y: this.borinOriginalY,
+      duration: 3500,
+      ease: 'Power1',
+      onComplete: () => {
+        this.borinState = 'idle';
+        // Dispatch event to refresh developer logs in React DevPanel
+        window.dispatchEvent(new CustomEvent('debug-update', {
+          detail: { npc_id: 'borin' }
+        }));
+      }
+    });
   }
 }

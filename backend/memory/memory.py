@@ -44,13 +44,15 @@ def get_all_memories(npc_id):
         collection = get_npc_collection(npc_id)
         results = collection.get()
         if results and results['documents']:
-            # Return list of {text, timestamp} objects
+            # Return list of {text, timestamp, is_core, salience} objects
             memories = []
             for i, doc in enumerate(results['documents']):
                 meta = results['metadatas'][i] if results['metadatas'] else {}
                 memories.append({
                     'text': doc,
-                    'timestamp': meta.get('timestamp', 'unknown')
+                    'timestamp': meta.get('timestamp', 'unknown'),
+                    'is_core': meta.get('is_core', False),
+                    'salience': meta.get('salience', 0.0)
                 })
             return memories
         return []
