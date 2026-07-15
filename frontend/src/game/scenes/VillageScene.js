@@ -236,19 +236,20 @@ export default class VillageScene extends Phaser.Scene {
   }
 
   showSpeechBubble(npc, text) {
+    console.log(`[Phaser Chat Bubble] ${npc.npcData.name}: ${text}`);
     if (npc.speechBubble) {
       npc.speechBubble.destroy();
     }
     
     // Position text bubble below their feet/shadow to avoid top screen cutoff
     npc.speechBubble = this.add.text(npc.x, npc.y + 24, text, {
-      fontSize: '8px',
-      color: '#ffffff',
+      fontSize: '10px',
+      fill: '#ffffff',
       backgroundColor: '#1e293b',
       padding: { x: 5, y: 3 },
       wordWrap: { width: 120 },
       align: 'center'
-    }).setOrigin(0.5).setDepth(15);
+    }).setOrigin(0.5).setDepth(20);
 
     // Keep bubble anchored if sprite is moved/idle-bobbing
     this.tweens.add({
