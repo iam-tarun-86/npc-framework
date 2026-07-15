@@ -84,12 +84,16 @@ export default class NPC extends Phaser.GameObjects.Sprite {
     
     // Add a bounce tween when emote changes!
     if (emoji) {
+      this.emoteLabel.setScale(0);
       this.scene.tweens.add({
         targets: this.emoteLabel,
-        scale: { from: 0.5, to: 1.2 },
-        yoyo: true,
+        scale: 1.2,
         duration: 150,
-        ease: 'Back.easeOut'
+        yoyo: true,
+        hold: 50,
+        onComplete: () => {
+          if (this.emoteLabel) this.emoteLabel.setScale(1.0);
+        }
       });
     }
   }

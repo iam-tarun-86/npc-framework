@@ -65,7 +65,13 @@ export default class VillageScene extends Phaser.Scene {
           const lastMem = npcState.memories && npcState.memories.length > 0
             ? npcState.memories.slice().reverse().find(m => m.text.startsWith('Player:'))
             : null;
-          const isSurprised = lastMem ? lastMem.is_core : false;
+          
+          // ChromaDB metadata is often serialized as a string ("True"/"False") or number (1/0)
+          const isSurprised = lastMem 
+            ? (lastMem.is_core === true || lastMem.is_core === 'true' || lastMem.is_core === 'True' || lastMem.is_core === 1 || lastMem.is_core === '1')
+            : false;
+            
+          console.log(`[Emote Debug State] ${npcId} -> isSurprised: ${isSurprised} (raw: ${lastMem?.is_core}), mood: ${npcState.mood}`);
           
           if (isSurprised) {
             npcObj.setEmote('surprised');
@@ -86,8 +92,10 @@ export default class VillageScene extends Phaser.Scene {
       if (debug && debug.npc_id) {
         const npcObj = this.npcs[debug.npc_id];
         if (npcObj && this.borinState === 'idle') {
-          const isSurprised = debug.surprise_triggered;
+          const isSurprised = debug.surprise_triggered === true || debug.surprise_triggered === 'true' || debug.surprise_triggered === 'True' || debug.surprise_triggered === 1 || debug.surprise_triggered === '1';
           const mood = debug.mood_score;
+          
+          console.log(`[Emote Debug Chat] ${debug.npc_id} -> isSurprised: ${isSurprised} (raw: ${debug.surprise_triggered}), mood: ${mood}`);
           
           if (isSurprised) {
             npcObj.setEmote('surprised');
