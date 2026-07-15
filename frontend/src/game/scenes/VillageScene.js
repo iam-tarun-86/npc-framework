@@ -80,6 +80,28 @@ export default class VillageScene extends Phaser.Scene {
       });
     });
 
+    // Listen to debug-update to immediately show emotes when player chats in real-time!
+    window.addEventListener('debug-update', (event) => {
+      const debug = event.detail?.debug || event.detail;
+      if (debug && debug.npc_id) {
+        const npcObj = this.npcs[debug.npc_id];
+        if (npcObj && this.borinState === 'idle') {
+          const isSurprised = debug.surprise_triggered;
+          const mood = debug.mood_score;
+          
+          if (isSurprised) {
+            npcObj.setEmote('surprised');
+          } else if (mood < 0.35) {
+            npcObj.setEmote('angry');
+          } else if (mood > 0.70) {
+            npcObj.setEmote('happy');
+          } else {
+            npcObj.setEmote('clear');
+          }
+        }
+      }
+    });
+
     // Patrol cycle variables
     this.borinState = 'idle'; // 'idle', 'patrolling', 'chatting', 'returning'
     this.borinOriginalX = NPC_POSITIONS.borin.x * TILE_SIZE;
