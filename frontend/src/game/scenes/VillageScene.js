@@ -237,29 +237,45 @@ export default class VillageScene extends Phaser.Scene {
 
   showSpeechBubble(npc, text) {
     console.log(`[Phaser Chat Bubble] ${npc.npcData.name}: ${text}`);
-    if (npc.speechBubble) {
-      npc.speechBubble.destroy();
-    }
+    if (npc.speechBubbleText) npc.speechBubbleText.destroy();
+    if (npc.speechBubbleBg) npc.speechBubbleBg.destroy();
     
-    // Position text bubble below their feet/shadow to avoid top screen cutoff
-    npc.speechBubble = this.add.text(npc.x, npc.y + 24, text, {
-      fontSize: '10px',
+    // Create text object to calculate size
+    const textObject = this.add.text(npc.x, npc.y + 32, text, {
+      fontSize: '8px',
       fill: '#ffffff',
-      backgroundColor: '#1e293b',
-      padding: { x: 5, y: 3 },
-      wordWrap: { width: 120 },
+      fontFamily: 'monospace',
+      wordWrap: { width: 110 },
       align: 'center'
-    }).setOrigin(0.5).setDepth(20);
-
-    // Keep bubble anchored if sprite is moved/idle-bobbing
-    this.tweens.add({
-      targets: npc.speechBubble,
-      y: npc.y + 26,
-      duration: 1000,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut'
-    });
+    }).setOrigin(0.5).setDepth(21);
+    
+    const bubbleWidth = textObject.width + 12;
+    const bubbleHeight = textObject.height + 8;
+    
+    // Draw a premium rounded rect bubble box
+    const bg = this.add.graphics();
+    bg.fillStyle(0x0f172a, 0.95);  // Deep slate background
+    bg.lineStyle(1, 0x38bdf8, 1);    // Cyan border matching dev overlay
+    
+    const rectX = npc.x - bubbleWidth / 2;
+    const rectY = npc.y + 32 - bubbleHeight / 2;
+    
+    bg.fillRoundedRect(rectX, rectY, bubbleWidth, bubbleHeight, 4);
+    bg.strokeRoundedRect(rectX, rectY, bubbleWidth, bubbleHeight, 4);
+    
+    // Draw upward pointer pointing to NPC shadow/feet
+    bg.beginPath();
+    bg.moveTo(npc.x - 4, rectY);
+    bg.lineTo(npc.x, rectY - 4);
+    bg.lineTo(npc.x + 4, rectY);
+    bg.closePath();
+    bg.fillPath();
+    bg.strokePath();
+    
+    bg.setDepth(20);
+    
+    npc.speechBubbleText = textObject;
+    npc.speechBubbleBg = bg;
   }
 
   displayNPCTranscript(transcript) {
@@ -268,15 +284,19 @@ export default class VillageScene extends Phaser.Scene {
     const showNextTurn = () => {
       if (this.dialogueOpen) {
         // If player suddenly opens a dialogue (with someone else), abort patrol chat
-        if (this.npcs.borin.speechBubble) this.npcs.borin.speechBubble.destroy();
-        if (this.npcs.alaric.speechBubble) this.npcs.alaric.speechBubble.destroy();
+        if (this.npcs.borin.speechBubbleText) this.npcs.borin.speechBubbleText.destroy();
+        if (this.npcs.borin.speechBubbleBg) this.npcs.borin.speechBubbleBg.destroy();
+        if (this.npcs.alaric.speechBubbleText) this.npcs.alaric.speechBubbleText.destroy();
+        if (this.npcs.alaric.speechBubbleBg) this.npcs.alaric.speechBubbleBg.destroy();
         this.endNPCChat();
         return;
       }
 
       if (turn >= transcript.length) {
-        if (this.npcs.borin.speechBubble) this.npcs.borin.speechBubble.destroy();
-        if (this.npcs.alaric.speechBubble) this.npcs.alaric.speechBubble.destroy();
+        if (this.npcs.borin.speechBubbleText) this.npcs.borin.speechBubbleText.destroy();
+        if (this.npcs.borin.speechBubbleBg) this.npcs.borin.speechBubbleBg.destroy();
+        if (this.npcs.alaric.speechBubbleText) this.npcs.alaric.speechBubbleText.destroy();
+        if (this.npcs.alaric.speechBubbleBg) this.npcs.alaric.speechBubbleBg.destroy();
         this.endNPCChat();
         return;
       }
@@ -286,8 +306,9 @@ export default class VillageScene extends Phaser.Scene {
       const listenerNPC = current.speaker === 'borin' ? this.npcs.alaric : this.npcs.borin;
       
       // Clear listener's speech bubble
-      if (listenerNPC && listenerNPC.speechBubble) {
-        listenerNPC.speechBubble.destroy();
+      if (listenerNPC) {
+        if (listenerNPC.speechBubbleText) listenerNPC.speechBubbleText.destroy();
+        if (listenerNPC.speechBubbleBg) listenerNPC.speechBubbleBg.destroy();
       }
       
       // Trigger speech bubble
@@ -307,6 +328,12 @@ export default class VillageScene extends Phaser.Scene {
     this.npcs.borin.setEmote('clear');
     this.npcs.alaric.setEmote('clear');
     
+    // Clear speech bubbles
+    if (this.npcs.borin.speechBubbleText) this.npcs.borin.speechBubbleText.destroy();
+    if (this.npcs.borin.speechBubbleBg) this.npcs.borin.speechBubbleBg.destroy();
+    if (this.npcs.alaric.speechBubbleText) this.npcs.alaric.speechBubbleText.destroy();
+    if (this.npcs.alaric.speechBubbleBg) this.npcs.alaric.speechBubbleBg.destroy();
+
     this.borinState = 'returning';
     
     // Return Borin to guard post
