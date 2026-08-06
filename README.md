@@ -102,6 +102,20 @@ The village contains four distinct characters, each defined by their own JSON co
 
 ## 🛠️ Installation & Setup
 
+### 🚀 Quick Start (Automated Startup)
+
+The easiest way to run the entire framework (both Flask backend and React/Vite frontend) is using the root startup script.
+
+1. Ensure your local LLM server is running at `http://localhost:8085/v1/chat/completions`.
+2. Run the startup script:
+   ```bash
+   ./start.sh
+   ```
+
+This script will verify your Python environment, install any missing frontend node modules, launch both services in parallel, prefix logs beautifully, and clean up background processes when you press `Ctrl+C`.
+
+---
+
 ### Prerequisites
 *   **Python 3.12+** (for the Backend Server)
 *   **Node.js 16+** & **npm** (for the Frontend Game)
@@ -192,3 +206,8 @@ Open the developer view panel using the **Tab key** or the gear icon. It provide
 3.  **Episodic Log:** Full scrollable dialogue logs stored in ChromaDB vector memory, highlighting core consolidated memories.
 4.  **Semantic Map:** The relational database facts extracted from conversations.
 5.  **Master Wipes:** Clear individual NPC databases or trigger a "Master Wipe" to completely reset all SQLite and ChromaDB data for a clean gameplay run.
+
+---
+
+> *"In a scripted world, the best conversation is an autonomous memory."* — **Elder Mira**
+
