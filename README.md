@@ -1,12 +1,48 @@
 # 🎮 NPC Cognitive Architecture & Interactive RPG Framework
 
-An immersive 2D RPG simulation where Non-Player Characters (NPCs) are driven by a local hybrid cognitive architecture integrated with custom Deep Learning models. NPCs in this village do not follow static dialog trees; instead, they possess **Episodic Memory (Chroma Vector Database)**, **Semantic Memory (SQLite Relational Facts)**, **Procedural Memory (Behavioral Adaptation)**, and live **Neural Engines (PyTorch MLP, CNN, & Autoencoder)** that dynamically evaluate relationships, trigger cognitive "surprise" alerts, and consolidate memories.
+<p align="center">
+  <img src="screenshots/readme/hero_world.png" alt="A stylized 3D fantasy village where NPCs think, remember, and adapt" width="920"/>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" alt="React 19"/>
+  <img src="https://img.shields.io/badge/Three.js-r186-000000?logo=threedotjs&logoColor=white" alt="Three.js"/>
+  <img src="https://img.shields.io/badge/Phaser-3-8E44AD?logo=phaser&logoColor=white" alt="Phaser 3 fallback"/>
+  <img src="https://img.shields.io/badge/PyTorch-MLP·CNN·Autoencoder-EE4C2C?logo=pytorch&logoColor=white" alt="PyTorch"/>
+  <img src="https://img.shields.io/badge/ChromaDB-Episodic%20Memory-4B32C3" alt="ChromaDB"/>
+  <img src="https://img.shields.io/badge/Flask-Backend-000000?logo=flask&logoColor=white" alt="Flask"/>
+</p>
+
+A stylized **3D** RPG simulation — rendered with **Three.js**, with a 2D **Phaser 3** fallback engine — where Non-Player Characters (NPCs) are driven by a local hybrid cognitive architecture integrated with custom Deep Learning models. NPCs in this village do not follow static dialog trees; instead, they possess **Episodic Memory (Chroma Vector Database)**, **Semantic Memory (SQLite Relational Facts)**, **Procedural Memory (Behavioral Adaptation)**, and live **Neural Engines (PyTorch MLP, CNN, & Autoencoder)** that dynamically evaluate relationships, trigger cognitive "surprise" alerts, and consolidate memories.
+
+---
+
+## ✨ Showcase
+
+<table>
+  <tr>
+    <td width="50%"><img src="screenshots/readme/dialogue.png" alt="Cognitive dialogue with an NPC"/></td>
+    <td width="50%"><img src="screenshots/readme/devpanel.png" alt="AI Observability Console"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>🗣️ Cognitive Dialogue</b><br/>In-character replies shaped by live mood, memory &amp; intent</td>
+    <td align="center"><b>🧠 AI Observability Console</b><br/>Real-time mood, ChromaDB vectors, autoencoder surprise &amp; SQLite facts</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="screenshots/readme/shop.png" alt="Merchant economy and inventory"/></td>
+    <td width="50%"><img src="screenshots/readme/world_proximity.png" alt="Explorable stylized 3D village"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>🛒 Merchant Economy</b><br/>Buy real inventory with silver coins from a persistent purse</td>
+    <td align="center"><b>🌲 Explorable 3D Village</b><br/>Roam the village, meet NPCs, and trigger proximity interactions</td>
+  </tr>
+</table>
 
 ---
 
 ## 🗺️ System Overview & Gameplay
 
-The player navigates a 2D grid-based village built with **Phaser 3**, interacting with characters in real-time. 
+The player explores a stylized **3D** village rendered with **Three.js** — a 2D **Phaser 3** engine remains available as a fallback via the in-game **ENGINE** switch — interacting with characters in real-time. 
 
 *   **Move:** Use `WASD` or `Arrow Keys` to walk around the village.
 *   **Interact:** Approach an NPC and press `E` to open the Dialogue Overlay.
@@ -104,21 +140,21 @@ The village contains four distinct characters, each defined by their own JSON co
 
 ### 🚀 Quick Start (Automated Startup)
 
-The easiest way to run the entire framework (both Flask backend and React/Vite frontend) is using the root startup script.
+The easiest way to run the entire framework (both Flask backend and React/Vite frontend) is using the Windows startup launcher:
 
 1. Ensure your local LLM server is running at `http://localhost:8085/v1/chat/completions`.
-2. Run the startup script:
-   ```bash
-   ./start.sh
-   ```
-
-This script will verify your Python environment, install any missing frontend node modules, launch both services in parallel, prefix logs beautifully, and clean up background processes when you press `Ctrl+C`.
+2. Launch the framework:
+   - **Double-click** `start.bat`, OR
+   - Run in PowerShell:
+     ```powershell
+     .\start.ps1
+     ```
 
 ---
 
 ### Prerequisites
-*   **Python 3.12+** (for the Backend Server)
-*   **Node.js 16+** & **npm** (for the Frontend Game)
+*   **Python 3.10+** (for the Backend Server)
+*   **Node.js 18+** & **npm** (for the Frontend Game)
 *   **Local LLM server** (e.g., Llama.cpp, Ollama, or LM Studio) running a chat completions endpoint at `http://localhost:8085/v1/chat/completions`.
 
 ---
@@ -126,18 +162,18 @@ This script will verify your Python environment, install any missing frontend no
 ### 1. Backend Server Setup
 
 Navigate to the `backend` folder:
-```bash
+```powershell
 cd backend
 ```
 
 Create and activate a virtual environment:
-```bash
+```powershell
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+.\venv\Scripts\activate
 ```
 
 Install Python dependencies:
-```bash
+```powershell
 pip install -r requirements.txt
 ```
 
@@ -209,5 +245,5 @@ Open the developer view panel using the **Tab key** or the gear icon. It provide
 
 ---
 
-> *"In a scripted world, the best conversation is an autonomous memory."* — **Elder Mira**
+> *"In a scripted world, the best conversation is an autonomous memory."*  -  **Elder Mira**
 
